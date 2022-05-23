@@ -1,9 +1,9 @@
-use std::thread;
 use std::sync::{mpsc, Arc, Mutex};
+use std::thread;
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Message>
+    sender: mpsc::Sender<Message>,
 }
 
 impl ThreadPool {
@@ -26,7 +26,8 @@ impl ThreadPool {
     }
 
     pub fn execute<F>(&self, f: F)
-        where F: FnOnce() + Send + 'static
+    where
+        F: FnOnce() + Send + 'static,
     {
         let message = Message::NewJob(Box::new(f));
         self.sender.send(message).unwrap();
@@ -56,30 +57,36 @@ type Job = Box<dyn FnOnce() + Send + 'static>;
 
 enum Message {
     NewJob(Job),
-    Terminate
+    Terminate,
 }
 
 struct Worker {
     id: usize,
-    handle: Option<thread::JoinHandle<()>>
+    handle: Option<thread::JoinHandle<()>>,
 }
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Message>>>) -> Worker {
         println!("Creating worker with id {}", id);
-        Worker { id, handle: Some(thread::spawn(move || loop {
-            let message = receiver.lock().unwrap().recv().unwrap();
-            match message {
-                Message::NewJob(job) => {
-                    println!("Worker {} got a job, executing...", id);
-                    job();
-                },
-                Message::Terminate => {
-                    println!("Worker {} received a termination command, terminating...", id);
-                    break;
+        Worker {
+            id,
+            handle: Some(thread::spawn(move || loop {
+                let message = receiver.lock().unwrap().recv().unwrap();
+                match message {
+                    Message::NewJob(job) => {
+                        println!("Worker {} got a job, executing...", id);
+                        job();
+                    }
+                    Message::Terminate => {
+                        println!(
+                            "Worker {} received a termination command, terminating...",
+                            id
+                        );
+                        break;
+                    }
                 }
-            }
-        })) }
+            })),
+        }
     }
 }
 
