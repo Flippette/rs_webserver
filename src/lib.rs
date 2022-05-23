@@ -5,9 +5,8 @@ use std::fs;
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
 
+#[derive(Debug)]
 pub struct Endpoint<'a> {
     uri: &'a str,
     res: &'a str,
@@ -32,10 +31,6 @@ pub fn handle_connection(mut stream: TcpStream, endpoints: Arc<Vec<Endpoint>>) {
         if buffer.starts_with(format!("GET {} HTTP/1.1\r\n", endpoint.uri).as_bytes()) {
             status_line = format!("HTTP/1.1 {}", endpoint.res);
             document = endpoint.doc.to_string();
-        }
-
-        if buffer.starts_with(b"GET /sleep HTTP/1.1\r\n") {
-            thread::sleep(Duration::from_secs(10));
         }
     }
 

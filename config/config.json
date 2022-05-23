@@ -1,0 +1,10 @@
+{
+    "address": "127.0.0.1:7878",
+    "endpoints": [
+        {
+            "uri": "/",
+            "res": "200 OK",
+            "doc": "res/default.html"
+        }
+    ]
+}
