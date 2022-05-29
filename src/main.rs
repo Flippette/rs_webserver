@@ -3,7 +3,6 @@ use std::net::TcpListener;
 use std::sync::Arc;
 use std::thread;
 use std::fs;
-use serde_json;
 
 fn main() {
     let config = fs::read_to_string("config/config.json")
@@ -14,12 +13,14 @@ fn main() {
 
     let addr = config["address"].as_str().unwrap();
     println!("Starting server at {}!", &addr);
-    let listener = TcpListener::bind(&addr).expect(format!("Failed to bind to {}!", addr).as_str());
+    let listener = TcpListener::bind(&addr)
+        // .expect(format!("Failed to bind to {}!", addr).as_str());
+        .unwrap_or_else(|_| panic!("Failed to bind to {}!", addr));
     let pool = ThreadPool::new(thread::available_parallelism().unwrap().get())
         .expect("Failed to create thread pool!");
 
     let mut tmp_endpoints = vec![];
-    for endpoint in config.get("endpoints") {
+    if let Some(endpoint) = config.get("endpoints") {
         for endpt in endpoint.as_array().unwrap() {
             tmp_endpoints.push(Endpoint::new(
                 endpt.get("uri").unwrap().as_str().unwrap(),
