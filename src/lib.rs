@@ -2,36 +2,48 @@ mod threading;
 pub use threading::*;
 
 use std::fs;
-use std::io::prelude::*;
+use std::io::{prelude::*, BufRead, BufReader};
 use std::net::TcpStream;
 use std::sync::Arc;
 
-#[derive(Debug)]
-pub struct Endpoint<'a> {
-    uri: &'a str,
-    res: &'a str,
-    doc: &'a str,
+#[derive(Debug, Clone)]
+pub struct Endpoint {
+    uri: String,
+    res: String,
+    doc: String,
 }
 
-impl<'a> Endpoint<'a> {
-    pub fn new(uri: &'a str, res: &'a str, doc: &'a str) -> Endpoint<'a> {
-        Endpoint { uri, res, doc }
+impl Endpoint {
+    pub fn new(uri: &str, res: &str, doc: &str) -> Endpoint {
+        Endpoint {
+            uri: String::from(uri),
+            res: String::from(res),
+            doc: String::from(doc),
+        }
     }
 }
 
 pub fn handle_connection(mut stream: TcpStream, endpoints: Arc<Vec<Endpoint>>) {
-    // let mut buffer = [0; 1024];
-    // stream.read(&mut buffer).unwrap();
+    let mut buffer = vec![];
+    let mut reader = BufReader::new(&stream);
+    loop {
+        let mut current_read = String::new();
+        reader.read_line(&mut current_read).unwrap();
+        buffer.append(&mut Vec::from_iter(current_read.as_bytes().iter().copied()));
+        if current_read == "\r\n" {
+            break;
+        }
+    }
 
-    let mut buffer = String::new();
-    stream.read_to_string(&mut buffer).unwrap();
+    println!("buffer: {:?}", String::from_utf8(buffer.clone()));
+    println!("buffer len: {}", buffer.len());
 
     let (mut status_line, mut document) = (
         "HTTP/1.1 404 NOT FOUND".to_string(),
         "res/404.html".to_string(),
     );
     for endpoint in endpoints.iter() {
-        if buffer.starts_with(format!("GET {} HTTP/1.1\r\n", endpoint.uri).as_str()) {
+        if buffer.starts_with(format!("GET {} HTTP/1.1\r\n", endpoint.uri).as_bytes()) {
             status_line = format!("HTTP/1.1 {}", endpoint.res);
             document = endpoint.doc.to_string();
         }
