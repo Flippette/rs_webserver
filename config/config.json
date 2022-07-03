@@ -1,6 +1,11 @@
 {
-    "address": "127.0.0.1:7878",
+    "address": "localhost:8080",
     "endpoints": [
+        {
+            "uri": "/teapot",
+            "res": "418 I'm a teapot",
+            "doc": "res/418.html"
+        },
         {
             "uri": "/",
             "res": "200 OK",
